@@ -1,21 +1,7 @@
-CREATE TABLE counts (
-	synset 	text ,		--synset番号
-	o_cnt	integer, 	--po || oi 両方のカウント数
-	o_str	text,		--synset番号のカンマ区切りテキスト
-	po_cnt 	integer, 	--Hyponymのみ、カウント数
-	po_str	text,		--Hyponymのみ、synset番号のカンマ区切りテキスト	
-	oi_cnt	integer,	--Hyponym Instanceのみ、カウント数。
-	oi_str	text,		--Hyponym Instanceのみ、synset番号のカンマ区切りテキスト
-	 
-	e_cnt	integer,	--pe || ei 両方のカウント数
-	e_str	text,		--synset番号のカンマ区切りテキスト
-	pe_cnt	integer,	--Hypernymのみ、カウント数	
-	pe_str	text,		--Hypernymのみ、synset番号のカンマ区切りテキスト
-	ei_cnt	integer,	--Hypernym Instanceのみ、カウント数	
-	ei_str	text,		--Hypernym Instanceのみ、synset番号のカンマ区切りテキスト
-	e_h_cnt	integer,	--Hypernym＋Holonym(hm,hp,hs)のカウント
-	e_h_str text		--そのsynsetのカンマ区切りテキスト。
-);
+--
+-- Dump of current layout.
+--
+
 CREATE TABLE def_jp(
 	synset		text primary key,
 	def_jp		text,
@@ -109,17 +95,48 @@ CREATE TABLE synset_denorm(
 		name			text, --一つ目のword. やはり名前的なものがどうしても...
 		pos				text, --n,v,a,r,s
 		lexfile_id		text, --00-44
+		lexfile_name	text, --noun.person, noun.artefact ...
 		def_en 			text, --def
 		def_jp 			text, --日本語訳	
 		words_en 		text, --EN,EN,EN...
 		words_jp 		text, --JP,JP,JP...
 		meaning_links 	text, --synset|link, synsetr|link...
 		form_links 		text,  --synset|sensekey|link, synset|sensekey,link...
+		notes			text, --comment欄
+		sensekeys		text, --sensekey ... reform_school%1:06:00::,reformatory%1:06:00::, ...
 		primary key(synset)
-	);
+);
+CREATE TABLE counts (
+	synset 	text ,		--synset番号
+	o_cnt	integer, 	--po || oi 両方のカウント数
+	o_str	text,		--synset番号のカンマ区切りテキスト
+	po_cnt 	integer, 	--Hyponymのみ、カウント数
+	po_str	text,		--Hyponymのみ、synset番号のカンマ区切りテキスト	
+	oi_cnt	integer,	--Hyponym Instanceのみ、カウント数。
+	oi_str	text,		--Hyponym Instanceのみ、synset番号のカンマ区切りテキスト
+	 
+	e_cnt	integer,	--pe || ei 両方のカウント数
+	e_str	text,		--synset番号のカンマ区切りテキスト
+	pe_cnt	integer,	--Hypernymのみ、カウント数	
+	pe_str	text,		--Hypernymのみ、synset番号のカンマ区切りテキスト
+	ei_cnt	integer,	--Hypernym Instanceのみ、カウント数	
+	ei_str	text,		--Hypernym Instanceのみ、synset番号のカンマ区切りテキスト
+	e_h_cnt	integer,	--Hypernym＋Holonym(hm,hp,hs)のカウント
+	e_h_str text		--そのsynsetのカンマ区切りテキスト。
+);
+
+--
+--indices
+--
+CREATE UNIQUE INDEX idx_dj_synset on def_jp(synset);
+CREATE UNIQUE INDEX idx_f_sensekey on form (sensekey);
 CREATE INDEX idx_f_word on form(word);
 CREATE INDEX idx_form_link_link on form_link(link);
 CREATE INDEX idx_meaning_link_link on meaning_link(link);
 CREATE INDEX idx_mfl_sensekey on meaning_form_link(sensekey);
 CREATE INDEX idx_mfl_sensekey_lowere on meaning_form_link(sensekey_lower);
+CREATE INDEX idx_mfl_synset on meaning_form_link(synset);
 CREATE UNIQUE INDEX pk_counts on counts(synset);
+--
+--
+--
