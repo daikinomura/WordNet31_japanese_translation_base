@@ -1,0 +1,125 @@
+CREATE TABLE counts (
+	synset 	text ,		--synset番号
+	o_cnt	integer, 	--po || oi 両方のカウント数
+	o_str	text,		--synset番号のカンマ区切りテキスト
+	po_cnt 	integer, 	--Hyponymのみ、カウント数
+	po_str	text,		--Hyponymのみ、synset番号のカンマ区切りテキスト	
+	oi_cnt	integer,	--Hyponym Instanceのみ、カウント数。
+	oi_str	text,		--Hyponym Instanceのみ、synset番号のカンマ区切りテキスト
+	 
+	e_cnt	integer,	--pe || ei 両方のカウント数
+	e_str	text,		--synset番号のカンマ区切りテキスト
+	pe_cnt	integer,	--Hypernymのみ、カウント数	
+	pe_str	text,		--Hypernymのみ、synset番号のカンマ区切りテキスト
+	ei_cnt	integer,	--Hypernym Instanceのみ、カウント数	
+	ei_str	text,		--Hypernym Instanceのみ、synset番号のカンマ区切りテキスト
+	e_h_cnt	integer,	--Hypernym＋Holonym(hm,hp,hs)のカウント
+	e_h_str text		--そのsynsetのカンマ区切りテキスト。
+);
+CREATE TABLE def_jp(
+	synset		text primary key,
+	def_jp		text,
+	words_jp	text,
+	notes		text
+);
+CREATE TABLE form (
+    sensekey        text,       --word%pos_id:lexfile_id:lex_id:adj_head:adj_head_lexid
+    word            text,       --wordはユニークではない。blessing, blessing0などの作業ファ
+                                --イル内重複が、文字の形は同じであっても違うwordform関係を取
+                                --り得るwordformとして登録される。    
+	word_idx        text,       --dictエントリ中の単語出現順。000 .. 999 								
+	                            --本来必要無し。Denormで前バージョンのDBと単語列を比較するため
+    pos             text,       --品詞n,v,a,r,s
+	lexfile_id      text,       --00 - 44
+	adj_position    text,       --p,ip,a for adj
+    primary key (sensekey)
+);
+CREATE TABLE form_link (
+    sensekey1        text,          --word%pos_id:lexfile_id:lex_id:adj_head:adj_head_lexid
+    sensekey2        text,
+    link            text,
+    primary key (sensekey1, sensekey2, link)
+);
+CREATE TABLE frame(
+	sensekey		text,
+	frame_type		text,		 --'frame1'=grind frame + verb.Framestext, 
+                                 --'frame2'=sentidx.vrb + sents.vrb.txt
+	frame_id      	integer
+	--primary key (sensekey,frame_id)
+);
+CREATE TABLE frame_master(
+	frame_id        integer,
+	frame_type		text,		 --'frame1'|'frame2'
+    frame_text      text,
+	primary key (frame_id, frame_type)
+);
+CREATE TABLE freq(
+    sensekey        text,       --word%pos_num:lexfile_id:lex_id::
+    freq            integer,    --how many times the word appears in tagged corpus
+    sense_number    integer,    --各単語ごとにfreq降順にならべた時の通番。出現しない場合でも通
+                                --  番でふられる
+    primary key( sensekey )
+);
+CREATE TABLE lexfile (
+    lexfile_id         text,
+    lexfile_name       text,
+    pos                text,
+    def                text,
+    primary key(lexfile_id)
+);
+CREATE TABLE link_def (
+    link_name        text,      --like Hypenym, Hyponym... full name of link
+	link_jp			 text,		--日本語訳
+	link_abbr	 	 text,		--二文字での略記 ...コマンドライン、パラメータ用
+    link_prinston    text,      --original link string like @,~,etc...
+    link             text,      --four letter alpha for link ex. hype,hypo based on nict
+    link_type        text,      --WordSense link(synlink) or WordForm link or both
+    youandi_text    text,       --You and I text. Why sometimes You and I change???
+    def                text,    --短文で説明しがたい、どこで使われているかを中心に。
+    primary key( link_prinston )
+);
+CREATE TABLE meaning (
+    synset     text,               --id for meaning. byte offset of WordNet's dict/data* files. 
+                                   --  n00001740の形に、nict形式の00001740-nから変更
+    pos        text,               --n,v,a,r,s
+	lexfile_id text,               --00 - 44
+    name       text,               --シンセットに名前はないが、最初の一語を代表として。。
+    def        text,               --definition of synset and example sentences
+    primary key (synset)
+);
+CREATE TABLE meaning_form_link (
+    synset            text,        --n00001740
+    sensekey          text, sensekey_lower text,        --word%pos_id:lexfile_id:lex_id:adj_head:adj_head_lexid
+    primary key (synset,sensekey)
+);
+CREATE TABLE meaning_link(
+    synset1 text,                      --どの意味から        (from vertex)
+    synset2 text,                      --どの意味に          (to vertex)
+    link     text,                     --この関係がある。    (edge kind) 
+    primary key (synset1,synset2,link)
+);
+CREATE TABLE pos_def (
+    pos                text,    --n,v,a,r,s
+    pos_num            integer, --1,2,3,4,5 (sensekeyの品詞のフィールドでこの番号が使われる
+    def                text,    
+    primary key(pos)
+);
+CREATE TABLE synset_denorm(
+		synset 			text, --ex: n00001740 
+		name			text, --一つ目のword. やはり名前的なものがどうしても...
+		pos				text, --n,v,a,r,s
+		lexfile_id		text, --00-44
+		def_en 			text, --def
+		def_jp 			text, --日本語訳	
+		words_en 		text, --EN,EN,EN...
+		words_jp 		text, --JP,JP,JP...
+		meaning_links 	text, --synset|link, synsetr|link...
+		form_links 		text,  --synset|sensekey|link, synset|sensekey,link...
+		primary key(synset)
+	);
+CREATE INDEX idx_f_word on form(word);
+CREATE INDEX idx_form_link_link on form_link(link);
+CREATE INDEX idx_meaning_link_link on meaning_link(link);
+CREATE INDEX idx_mfl_sensekey on meaning_form_link(sensekey);
+CREATE INDEX idx_mfl_sensekey_lowere on meaning_form_link(sensekey_lower);
+CREATE UNIQUE INDEX pk_counts on counts(synset);
